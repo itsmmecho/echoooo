@@ -1,69 +1,72 @@
-let countries = []
-let stations = []
+const baseURL = "https://de1.api.radio-browser.info/json";
 
-const baseURL = "http://de1.api.radio-browser.info/json/"
+let countries = [];
+let stations = [];
 
-//LOAD COUNTRIES
-
-async function loadCountries(params) {
-    const res = await fetch(`${baseURL}countries`)
+/* ---------------- COUNTRIES ---------------- */
+async function loadCountries() {
+    const res = await fetch(`${baseURL}/countries`);
     countries = await res.json();
-    console.log(countries);
 
-    const select = document.getElementById("countrySelect")
+    const select = document.getElementById("countrySelect");
     select.innerHTML = "";
 
     countries.forEach(c => {
-        let opt = document.createElement("option")
-        opt.value = c.name
-        opt.textContent = c.name
-        select.appendChild(opt)
-
-
+        let opt = document.createElement("option");
+        opt.value = c.name;
+        opt.textContent = c.name;
+        select.appendChild(opt);
     });
+
+    const ph = countries.find(c => c.name === "Philippines");
+    if (ph) {
+        select.value = "Philippines";
+        loadStations("Philippines");
+    }
 }
 
-    // LOAD ALL COUNTRIES STATION
-async function loadStation(country) {
-    const res = await fetch(`${baseURL}stations/bycountry/${country}?limit=50`)
-    stations = await res.json()
+/* ---------------- STATIONS ---------------- */
+async function loadStations(country) {
+    const res = await fetch(`${baseURL}/stations/bycountry/${country}?limit=50`);
+    stations = await res.json();
+
     const select = document.getElementById("stationSelect");
-    select.innerHTML = ""
+    select.innerHTML = "";
 
-    stations.forEach((s , i) => {
-        if(s.url_resolved) {
-            let opt = document.createElement("option")
-            opt.value = i
-            opt.textContent = s.name
-            select.appendChild(opt)
+    stations.forEach((s, i) => {
+        if (s.url_resolved) {
+            let opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = s.name;
+            select.appendChild(opt);
         }
-    })
-    updateUI()
+    });
+
+    updateUI();
 }
 
-function updateUI() 
+/* ---------------- UI ---------------- */
+function updateUI() {
+    const station = stations[stationSelect.value];
+    if (!station) return;
 
+    document.getElementById("stationName").textContent = station.name;
 
-{
-    const station = stations[stationSelect.value]
-    if(!station) return;
+    document.getElementById("stationInfo").textContent =
+        `${station.tags || "No genre"} • ${station.bitrate || "?"} kbps`;
 
-    document.getElementById("stationName").textContent = station.name
-
-    document.getElementById("stationInfo").textContent = `${station.tags || "No Genre"} 🐉 ${station.bitrate || "?"} kbps `
-    document.getElementById("stationLogo").src = (station.favicon && station.favicon.startsWith("http"))
-    ? station.favicon
-    : "http://cdn-icons-png.flaticon.com/512/727/727245.png";
-    console.log(station.favicon)
+    document.getElementById("stationLogo").src =
+        (station.favicon && station.favicon.startsWith("http"))
+        ? station.favicon
+        : "https://cdn-icons-png.flaticon.com/512/727/727245.png";
 }
 
+/* ---------------- EVENTS ---------------- */
+countrySelect.addEventListener("change", e => {
+    loadStations(e.target.value);
+});
 
-countrySelect.addEventListener("change" , e => {
-
-    loadStation(e.target.value)
-})
-
-stationSelect.addEventListener("change", updateUI)
+stationSelect.addEventListener("change", updateUI);
 
 /* ---------------- AUDIO ---------------- */
 const audio = document.getElementById("audio");
@@ -129,6 +132,5 @@ for (let i = 0; i < 60; i++) {
     eq.appendChild(bar);
 }
 
-
-
+/* ---------------- INIT ---------------- */
 loadCountries();
